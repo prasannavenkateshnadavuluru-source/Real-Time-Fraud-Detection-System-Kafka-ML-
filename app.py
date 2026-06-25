@@ -21,6 +21,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("fraud_app")
 
 app = FastAPI(title="Real-Time Fraud Detection Dashboard")
+app_description = "Real-Time Fraud Detection Dashboard Application"
+app_version = "0.1.0"
+logger.info(f"Launching {app_description} version {app_version}")
 
 # Paths setup
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
