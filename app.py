@@ -38,6 +38,8 @@ templates = Jinja2Templates(directory=templates_dir)
 # Pipeline and Generator instances
 pipeline = FraudDetectionPipeline()
 generator = TransactionGenerator()
+logger.info("Application initialization starting.")
+logger.debug(f"Using static_dir={static_dir}, templates_dir={templates_dir}")
 
 # WebSocket connection manager
 class ConnectionManager:
@@ -58,7 +60,7 @@ class ConnectionManager:
         logger.info(f"Client disconnected. Active connections: {len(self.active_connections)}")
 
     async def broadcast(self, message: dict):
-        # Gather active connections thread-safely
+        
         with self._lock:
             connections = list(self.active_connections)
         
