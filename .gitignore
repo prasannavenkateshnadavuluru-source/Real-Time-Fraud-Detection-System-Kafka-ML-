@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+fraud_detection.db
+.vscode/
+.idea/
+.DS_Store

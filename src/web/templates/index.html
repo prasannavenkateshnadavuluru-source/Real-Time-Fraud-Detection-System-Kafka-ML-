@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Fraud Detection Cockpit</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="glow-effect glow-top-left"></div>
+    <div class="glow-effect glow-bottom-right"></div>
+    
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-pulse"></div>
+                <h1 class="logo-text">ANTIGRAVITY // <span>FRAUD DETECTOR</span></h1>
+            </div>
+            <div class="system-status-container">
+                <span class="status-indicator-dot online"></span>
+                <span id="connection-status" class="status-text">CONNECTING TO STREAMING PIPELINE...</span>
+            </div>
+        </header>
+
+        <!-- KPIS -->
+        <section class="kpi-grid">
+            <div class="kpi-card" id="kpi-processed">
+                <div class="kpi-inner">
+                    <span class="kpi-label">TOTAL PROCESSED</span>
+                    <span class="kpi-value" id="val-processed">0</span>
+                    <span class="kpi-trend">Streaming Live</span>
+                </div>
+            </div>
+            <div class="kpi-card fraud-kpi" id="kpi-fraud-rate">
+                <div class="kpi-inner">
+                    <span class="kpi-label">FRAUD RATE (PCT)</span>
+                    <span class="kpi-value" id="val-fraud-rate">0.00%</span>
+                    <span class="kpi-trend text-red" id="val-fraud-count">0 Flagged</span>
+                </div>
+            </div>
+            <div class="kpi-card retry-kpi" id="kpi-retries">
+                <div class="kpi-inner">
+                    <span class="kpi-label">ACTIVE RETRIES</span>
+                    <span class="kpi-value" id="val-retries">0</span>
+                    <span class="kpi-trend" id="val-retry-subtext">Exponential Backoff</span>
+                </div>
+            </div>
+            <div class="kpi-card dlq-kpi" id="kpi-dlq">
+                <div class="kpi-inner">
+                    <span class="kpi-label">DLQ BACKLOG</span>
+                    <span class="kpi-value" id="val-dlq">0</span>
+                    <span class="kpi-trend text-violet">Needs Manual Intervention</span>
+                </div>
+            </div>
+            <div class="kpi-card xgb-kpi">
+                <div class="kpi-inner">
+                    <span class="kpi-label">AVG XGB PROB</span>
+                    <span class="kpi-value" id="val-xgb">0.000</span>
+                    <span class="kpi-trend">Supervised Model</span>
+                </div>
+            </div>
+            <div class="kpi-card iforest-kpi">
+                <div class="kpi-inner">
+                    <span class="kpi-label">AVG IFOREST ANOMALY</span>
+                    <span class="kpi-value" id="val-iforest">0.000</span>
+                    <span class="kpi-trend">Unsupervised Model</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="layout-grid">
+            <!-- LEFT COLUMN: CONTROLS & LOGS -->
+            <div class="layout-left">
+                <!-- CONTROLS -->
+                <div class="control-panel panel">
+                    <h2 class="panel-title">CONTROL CENTER</h2>
+                    
+                    <div class="control-grid">
+                        <button id="btn-fraud-burst" class="btn btn-red-glow">
+                            <span class="btn-icon">⚡</span> INJECT FRAUD BURST
+                        </button>
+                        
+                        <button id="btn-toggle-fault" class="btn btn-amber-glow">
+                            <span class="btn-icon">🔌</span> FAULT SIMULATION: OFF
+                        </button>
+                        
+                        <button id="btn-retrain" class="btn btn-purple-glow">
+                            <span class="btn-icon">🧠</span> RETRAIN ML PIPELINE
+                        </button>
+                        
+                        <button id="btn-clear-db" class="btn btn-border">
+                            <span class="btn-icon">🗑️</span> RESET DATA
+                        </button>
+                    </div>
+
+                    <div class="slider-container">
+                        <div class="slider-header">
+                            <span class="slider-label">TRANSACTION FREQUENCY</span>
+                            <span id="speed-display" class="slider-val">1.2s</span>
+                        </div>
+                        <input type="range" id="speed-slider" min="0.2" max="5.0" step="0.2" value="1.2" class="slider">
+                    </div>
+                    
+                    <div id="retrain-toast" class="toast hidden">
+                        <div class="spinner"></div>
+                        <span id="toast-text">Retraining Models... Pipeline paused.</span>
+                    </div>
+                </div>
+
+                <!-- LIVE TRANSACTION FEED -->
+                <div class="feed-panel panel">
+                    <div class="panel-header-inline">
+                        <h2 class="panel-title">REAL-TIME TRANSACTION STREAM</h2>
+                        <span class="stream-pulse"></span>
+                    </div>
+                    <div class="transaction-list" id="transaction-list">
+                        <div class="no-data">Awaiting transaction stream...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: CHARTS, ALERTS, DLQ -->
+            <div class="layout-right">
+                <!-- CHARTS -->
+                <div class="charts-panel panel">
+                    <h2 class="panel-title">STREAMING PERFORMANCE METRICS</h2>
+                    <div class="chart-container">
+                        <canvas id="throughput-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- ALERTS CONSOLE -->
+                <div class="alerts-panel panel">
+                    <h2 class="panel-title">FRAUD INCIDENTS CONSOLE</h2>
+                    <div class="alerts-list" id="alerts-list">
+                        <div class="no-data">No active fraud alerts. System secure.</div>
+                    </div>
+                </div>
+
+                <!-- DLQ INVESTIGATOR -->
+                <div class="dlq-panel panel">
+                    <div class="panel-header-inline">
+                        <h2 class="panel-title">DEAD-LETTER QUEUE (DLQ) INSPECTOR</h2>
+                        <span class="dlq-tag" id="dlq-counter-tag">0 PENDING</span>
+                    </div>
+                    <div class="dlq-list" id="dlq-list">
+                        <div class="no-data">Dead-Letter Queue is empty. No failed transactions.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
