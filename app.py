@@ -133,6 +133,10 @@ def shutdown_event():
 
 # --- HTTP ENDPOINTS ---
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "app": app_description, "version": app_version}
+
 @app.get("/", response_class=HTMLResponse)
 async def get_dashboard(request: Request):
     return templates.TemplateResponse(request, "index.html")
