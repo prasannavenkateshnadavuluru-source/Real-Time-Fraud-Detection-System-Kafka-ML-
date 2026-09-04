@@ -16,6 +16,8 @@ from src.db import init_db
 # Ensure models directory exists
 MODELS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "models"))
 os.makedirs(MODELS_DIR, exist_ok=True)
+SCRIPT_NAME = "train"
+SCRIPT_VERSION = "1.0"
 
 def generate_synthetic_history(num_users: int = 100, txs_per_user: int = 50) -> pd.DataFrame:
     """
